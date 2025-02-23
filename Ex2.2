@@ -1,0 +1,32 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
+using YamlDotNet.Serialization;
+
+var builder = WebApplication.CreateBuilder(args);
+var app = builder.Build();
+
+app.MapPost("/convert", async context =>
+{
+    try
+    {
+        var jsonContent = await new StreamReader(context.Request.Body).ReadToEndAsync();
+
+        var jsonObject = JsonConvert.DeserializeObject(jsonContent);
+
+        var serializer = new Serializer();
+        string yamlContent = serializer.Serialize(jsonObject);
+
+        await File.WriteAllTextAsync("output.yml", yamlContent);
+
+        await context.Response.WriteAsync("Arxiu JSON convertit a YAML i guardat com a 'output.yml'");
+    }
+    catch (Exception ex)
+    {
+        context.Response.StatusCode = 500;
+        await context.Response.WriteAsync($"Error: {ex.Message}");
+    }
+});
+
+app.Run();
