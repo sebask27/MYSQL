@@ -1,0 +1,4 @@
+[
+    {"nom": "Alice", "edat": 30, "ciutat": "Barcelona"},
+    {"nom": "Bob", "edat": 25, "ciutat": "Madrid"}
+]
