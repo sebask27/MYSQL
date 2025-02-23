@@ -1,0 +1,63 @@
+using System;
+using System.Data.SQLite;
+using System.IO;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+class Program
+{
+    static void Main()
+    {
+        string dbPath = "database.db";
+        if (!File.Exists(dbPath))
+        {
+            SQLiteConnection.CreateFile(dbPath);
+        }
+
+        using (var conn = new SQLiteConnection($"Data Source={dbPath};Version=3;"))
+        {
+            conn.Open();
+
+            string createTableQuery = @"
+                CREATE TABLE IF NOT EXISTS dades (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nom TEXT,
+                    edat INTEGER,
+                    ciutat TEXT
+                )";
+            using (var cmd = new SQLiteCommand(createTableQuery, conn))
+            {
+                cmd.ExecuteNonQuery();
+            }
+
+            string jsonContent = File.ReadAllText("arxiu.json");
+            var jsonArray = JArray.Parse(jsonContent);
+
+            foreach (var item in jsonArray)
+            {
+                string insertQuery = @"
+                    INSERT INTO dades (nom, edat, ciutat)
+                    VALUES (@nom, @edat, @ciutat)";
+                using (var cmd = new SQLiteCommand(insertQuery, conn))
+                {
+                    cmd.Parameters.AddWithValue("@nom", item["nom"].ToString());
+                    cmd.Parameters.AddWithValue("@edat", (int)item["edat"]);
+                    cmd.Parameters.AddWithValue("@ciutat", item["ciutat"].ToString());
+                    cmd.ExecuteNonQuery();
+                }
+            }
+
+            string selectQuery = "SELECT * FROM dades";
+            using (var cmd = new SQLiteCommand(selectQuery, conn))
+            {
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        Console.WriteLine($"ID: {reader["id"]}, Nom: {reader["nom"]}, Edat: {reader["edat"]}, Ciutat: {reader["ciutat"]}");
+                    }
+                }
+            }
+        }
+    }
+}
